@@ -43,6 +43,10 @@ constexpr bool kDefaultVendorCapabilitiesEnabled = true;
 static const std::string kPropertyVendorCapabilitiesEnabled =
     "bluetooth.core.le.vendor_capabilities.enabled";
 
+constexpr bool kDefaultErroneousDataReportingEnabled = true;
+static const std::string kPropertyErroneousDataReportingEnabled =
+    "bluetooth.hci.erroneous_data_reporting.enabled";
+
 using os::Handler;
 
 struct Controller::impl {
@@ -190,11 +194,14 @@ struct Controller::impl {
           handler->BindOnceOn(this, &Controller::impl::le_set_host_feature_handler));
     }
 
-    if (is_supported(OpCode::READ_DEFAULT_ERRONEOUS_DATA_REPORTING)) {
-      hci_->EnqueueCommand(
-          ReadDefaultErroneousDataReportingBuilder::Create(),
-          handler->BindOnceOn(
-              this, &Controller::impl::read_default_erroneous_data_reporting_handler));
+    if (os::GetSystemPropertyBool(
+            kPropertyErroneousDataReportingEnabled, kDefaultErroneousDataReportingEnabled)) {
+        if (is_supported(OpCode::READ_DEFAULT_ERRONEOUS_DATA_REPORTING)) {
+          hci_->EnqueueCommand(
+              ReadDefaultErroneousDataReportingBuilder::Create(),
+              handler->BindOnceOn(
+                  this, &Controller::impl::read_default_erroneous_data_reporting_handler));
+        }
     }
 
     // Skip vendor capabilities check if configured.
